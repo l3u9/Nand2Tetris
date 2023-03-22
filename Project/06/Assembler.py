@@ -3,7 +3,7 @@ import Parser, Code, SymbolTable, sys
 
 class Assembler(object):
     def __init__(self):
-        self.symboltable = SymbolTable.SymbolTable()
+        self.symbols = SymbolTable.SymbolTable()
         self.symbol_address = 16 #initial register symbol table size 15
 
     def pass1(self, file):
@@ -15,14 +15,12 @@ class Assembler(object):
             if type == parser.A_COMMAND or type == parser.C_COMMAND:
                 current_address += 1
             elif type == parser.L_COMMAND:
-                self.symboltable.addEntry(parser.symbol(), current_address)
-        print(self.symboltable.symboltable)
+                self.symbols.addEntry(parser.symbol(), current_address)
 
     def pass2(self, file1, file2):
         parser = Parser.Parser(file1)
-        print(self.symboltable.symboltable)
         code = Code.Code()
-        f = open("output.hack", "w")
+        f = open(file2, "w")
         while parser.hasMoreCommands():
             parser.advance()
             type = parser.command_type()
@@ -39,12 +37,19 @@ class Assembler(object):
         if symbol.isdigit():
             return symbol
         else:
-            if not self.symboltable.contains(symbol):
-                self.symboltable.add_entry(symbol, self.symbol_addr)
+            if not self.symbols.contains(symbol):
+                self.symbols.addEntry(symbol, self.symbol_address)
                 self.symbol_address += 1
-            return self.symboltable.GetAddress(symbol)
+            return self.symbols.GetAddress(symbol)
         
 asm = Assembler()
 
-asm.pass1("Max.asm")
-asm.pass2("Max.asm", "output.hack")
+filename = sys.argv[1]
+
+if "asm" in filename:
+    file1 = filename
+    name = filename.split(".")[0]
+    file2 = name + ".hack"
+
+asm.pass1(file1)
+asm.pass2(file1, file2)

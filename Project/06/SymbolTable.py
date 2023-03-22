@@ -26,7 +26,7 @@ class SymbolTable(object):
             "THIS" : 3,
             "THAT" : 4,
             "SCREEN" : 0x4000,
-            "KBD" : 0x6000
+            "KBD" : 0x6000,
         }
 
     def addEntry(self, symbol, address):

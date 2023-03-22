@@ -14,7 +14,9 @@ class Code(object):
         }
 
     def gen_a_instruction(self, address):
-        return self.int_to_bin(address).zfill(16)
+        print(address)
+        print(type(address))
+        return self.int_to_bin(int(address)).zfill(16)
     
     def gen_c_instruction(self, dest, comp, jump):
         return '111' + self.comp(comp) + self.dest(dest) + self.jump(jump)

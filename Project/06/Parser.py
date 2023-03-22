@@ -1,11 +1,11 @@
 import re
-import SymbolTable
+from SymbolTable import SymbolTable
+
 
 class Parser(object):
     A_COMMAND = 1
     C_COMMAND = 2
     L_COMMAND = 3
-    symboltable = SymbolTable.SymbolTable()
     def __init__(self, filename):
         f = open(filename, "r")
         self.data = f.read()
@@ -45,11 +45,8 @@ class Parser(object):
         self.get_command()
         if re.findall(r'@[a-zA-Z0-9_]+', self.command):
             self.process_a_command(self.command)
-            self.token = self.symbol()
-
         elif re.findall(r'\([a-zA-Z_]+\)', self.command):
             self.process_l_command(self.command)
-            self.token = self.symbol()
         elif "=" in self.command or ";" in self.command:
             self.process_c_command()
 
@@ -84,7 +81,9 @@ class Parser(object):
             data = self.command.split(";")
             self.comp_token = data[0]
             self.jump_token = data[-1]
-            self.dest_token = self.symboltable.GetAddress(self.token)
+            # data = re.findall(r"[a-zA-Z0-9]", self.token)
+            # # self.dest_token = SymbolTable.GetAddress(symbol="".join(data))
+            # self.dest_token = "".join(data)
         elif "=" in self.command:
             data = self.command.split("=")
             self.comp_token = data[-1]
@@ -92,5 +91,9 @@ class Parser(object):
             self.dest_token = data[0]
 
     def get_command(self):
-        self.command = self.codes.pop(0)    
-    
+        if self.hasMoreCommands():
+            self.command = self.codes.pop(0)
+        else:
+            self.command = ""
+        # if self.hasMoreCommands():
+        #     self.token = self.codes.pop(0)

@@ -1,15 +1,6 @@
-
+from VMConstant import *
 
 class Parser(object):
-    C_PUSH = 0
-    C_POP = 1
-    C_LABEL = 2
-    C_GOTO = 3
-    C_IF = 4
-    C_FUNCTION = 5
-    C_RETURN = 6
-    C_CALL = 7
-    C_ARITHMETIC = 8
     def __init__(self, filename):
         f = open(filename, "r")
         self.data = f.read()
@@ -48,23 +39,23 @@ class Parser(object):
 
     def commandType(self) -> str:
         if self.command.startswith("push"):
-            return self.C_PUSH
+            return C_PUSH
         elif self.command.startswith("pop"):
-            return self.C_POP
+            return C_POP
         elif self.command.startswith("label"):
-            return self.C_LABEL
+            return C_LABEL
         elif self.command.startswith("goto"):
-            return self.C_GOTO
+            return C_GOTO
         elif self.command.startswith("if-goto"):
-            return self.C_IF
+            return C_IF
         elif self.command.startswith("function"):
-            return self.C_FUNCTION
+            return C_FUNCTION
         elif self.command.startswith("return"):
-            return self.C_RETURN
+            return C_RETURN
         elif self.command.startswith("call"):
-            return self.C_CALL
+            return C_CALL
         else:
-            return self.C_ARITHMETIC
+            return C_ARITHMETIC
             
 
     def arg1(self):

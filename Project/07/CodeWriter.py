@@ -33,59 +33,6 @@ class CodeWriter:
         elif command_type == C_POP:
             self._pop(segment, index)
 
-    def write_label(self, label: str):
-        self.Instruction_l(label)
-
-    def write_goto(self, label: str):
-        self.Instruction_a(label)
-        self.Instruction_c(None, '0', "JMP")
-
-    def write_if(self, label: str):
-        self._pop_to_dest("D")
-        self.Instruction_a(label)
-        self.Instruction_c(None, "D", "JNE")
-
-    def write_call(self, function_name: str, num_args: int):
-        return_address = self._new_label()
-        self._push(S_CONST, return_address)
-        self._push(S_REG, R_LCL)
-        self._push(S_REG, R_ARG)
-        self._push(S_REG, R_THIS)
-        self._push(S_REG, R_THAT)
-        self._load_sp_offset(-num_args-5)
-        self._comp_to_reg(R_ARG, "D")
-        self.Instruction_a(function_name)
-        self.Instruction_c(None, "0", "JMP")
-        self.Instruction_l(return_address)
-
-    def write_return(self):
-        self._reg_to_reg(R_FRAME, R_LCL)
-        self.Instruction_a("5")
-        self.Instruction_c("A", "D-A")
-        self.Instruction_c("D", "M")
-        self._comp_to_reg(R_RET, "D")
-        self._pop(S_ARG, 0)
-        self._reg_to_dest("D", R_ARG)
-        self._comp_to_reg(R_SP, "D+1")
-        self._prev_frame_to_reg(R_THAT)
-        self._prev_frame_to_reg(R_THIS)
-        self._prev_frame_to_reg(R_ARG)
-        self._prev_frame_to_reg(R_LCL)
-        self._reg_to_dest("A", R_RET)
-        self.Instruction_c(None, "0", "JMP")
-
-    def _prev_frame_to_reg(self, reg: str):
-        self._reg_to_dest("D", R_FRAME)
-        self.Instruction_c("D" "D-1")
-        self._comp_to_reg(R_FRAME, "D")
-        self.Instruction_c("A", "D")
-        self.Instruction_c("D", "M")
-        self._comp_to_reg(reg, "D")
-
-    def write_function(self, function_name: str, num_locals: int):
-        self.Instruction_l(function_name)
-        for i in range(num_locals):
-            self._push(S_CONST, 0)
 
     def _push(self, segment: str, index: int):
         if self._is_constant_seg(segment):
@@ -222,45 +169,6 @@ class CodeWriter:
         else:
             self._load_seg_index(segment, index, indir)
 
-    def _load_seg_no_index(self, segment: str, indir: bool):
-        self.Instruction_a(segment)
-        if indir:
-            self._indir("AD")
-
-    def _load_seg_index(self, segment: str, index: int, indir: bool):
-        comp = "D+A"
-        if index < 0:
-            index = -index
-            comp = "A-D"
-        self.Instruction_a(str(index))
-        self.Instruction_c("D", "A")
-        self.Instruction_a(segment)
-        if indir:
-            self._indir()
-        
-        self.Instruction_a(str(index))
-        self.Instruction_c("D","A")
-        self.Instruction_a(segment)
-        if indir:
-            self._indir()
-        self.Instruction_c("AD", comp)
-
-
-    def _reg_to_dest(self, dest: str, reg: int):
-        self.Instruction_a(self._asm_reg(reg))
-        self.Instruction_c(dest, "M")
-
-    def _comp_to_reg(self, reg: int, comp: str):
-        self.Instruction_a(self._asm_reg(reg))
-        self.Instruction_c("M", comp)
-
-    def _reg_to_reg(self, dest: str, src: str):
-        self._reg_to_dest("D", src)
-        self._comp_to_reg(dest, "D")
-
-    def _indir(self, dest: str = 'A'):
-        self.Instruction_c(dest, "M")
-
     def _reg_num(self, segment: str, index: int):
         return self._reg_base(segment) + index
 
@@ -275,18 +183,11 @@ class CodeWriter:
         asm_label = {S_LCL:'LCL', S_ARG:'ARG', S_THIS:'THIS', S_THAT:'THAT'}
         return asm_label[segment]
 
-    def _asm_reg(self, regnum: int):
-        return "R" + str(regnum)
-
     def _jump(self, comp: str, jump: str):
         label = self._new_label()
         self.Instruction_a(label)
         self.Instruction_c(None, comp, label)
         return label
-    
-    def _new_label(self):
-        self.label_num += 1
-        return 'LABEL' + str(self.label_num)
 
     def Instruction_a(self, address: str):
         self.output_file.write("@" + address + "\n")

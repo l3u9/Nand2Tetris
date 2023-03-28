@@ -1,79 +1,74 @@
+import Lex
 from VMConstant import *
 
 class Parser(object):
+    _command_type = {'add':C_ARITHMETIC, 'sub':C_ARITHMETIC, 'neg':C_ARITHMETIC,
+                     'eq' :C_ARITHMETIC, 'gt' :C_ARITHMETIC, 'lt' :C_ARITHMETIC,
+                     'and':C_ARITHMETIC, 'or' :C_ARITHMETIC, 'not':C_ARITHMETIC,
+                     'label':C_LABEL,    'goto':C_GOTO,      'if-goto':C_IF, 
+                     'push':C_PUSH,      'pop':C_POP, 
+                     'call':C_CALL,      'return':C_RETURN,  'function':C_FUNCTION}
+                     
+    _nullary = ['add', 'sub', 'neg', 'eq', 'gt', 'lt', 'and', 'or', 'not', 'return']
+    _unary = ['label', 'goto', 'if-goto']
+    _binary = ['push', 'pop', 'function', 'call']
+
+
     def __init__(self, filename):
-        f = open(filename, "r")
-        self.data = f.read()
-        self.codes = self.delete_comment(self.data.split("\n"))
-        self.token = ""
-        self.command = ""
-        self.cmd_type = -1
+        self.lex = Lex.Lex(filename)
+        self._init_cmd_info()
 
-        f.close()
-
-    def delete_comment(self, codes):
-        arr = []
-        for i in codes:
-            data = i
-            if "//" in i:
-                a = i.split("//")
-                if a[0] == '':
-                    continue
-                else:
-                    data = a[0].strip()
-            if data == '':
-                continue
-
-            arr.append(data.strip())
-        return arr
+    def _init_cmd_info(self):
+        self._cmd_type = C_ERROR
+        self._arg1 = ''
+        self._arg2 = 0
 
     def hasMoreCommands(self):
-        if len(self.codes) == 0:
-            return False
-        else:
-            return True
+        return self.lex.hasMoreCommands()
 
     def advance(self):
-        self.get_command()
+        self._init_cmd_info()
+
+        self.lex.next_command()
+
+        tok, val = self.lex.cur_token
+
+        print(tok, val)
+
+        if tok != Lex.ID:
+            pass
+        if val in self._nullary:
+            self._nullary_command(val)
+        elif val in self._unary:
+            self._unary_command(val)
+        elif val in self._binary:
+            self._binary_command(val)
 
 
     def commandType(self) -> str:
-        if self.command.startswith("push"):
-            return C_PUSH
-        elif self.command.startswith("pop"):
-            return C_POP
-        elif self.command.startswith("label"):
-            return C_LABEL
-        elif self.command.startswith("goto"):
-            return C_GOTO
-        elif self.command.startswith("if-goto"):
-            return C_IF
-        elif self.command.startswith("function"):
-            return C_FUNCTION
-        elif self.command.startswith("return"):
-            return C_RETURN
-        elif self.command.startswith("call"):
-            return C_CALL
-        else:
-            return C_ARITHMETIC
+        return self._cmd_type
             
 
     def arg1(self):
-        if self.commandType() == self.C_ARITHMETIC:
-            return self.command
-        else:
-            return self.command.split()[0]
+        return self._arg1
 
     def arg2(self):
-        if self.commandType() in ["C_PUSH", "C_POP", "C_FUNCTION", "C_CALL"]:
-            return int(self.command.split()[2])
-        else:
-            raise ValueError("Invalid command type: {}".format(self.commandType()))
+        return self._arg2
 
+    def _set_cmd_type(self, id):
+        self._cmd_type = self._command_type[id]
 
-    def get_command(self):
-        if self.hasMoreCommands():
-            self.command = self.codes.pop(0)
-            print(self.command)
-        else:
-            self.command = ""
+    def _nullary_command(self, id):
+        self._set_cmd_type(id)
+        if self._command_type[id] == C_ARITHMETIC:
+            self._arg1 = id
+    
+    def _unary_command(self, id):
+        self._nullary_command(id)
+        tok, val = self.lex.next_token()
+        self._arg1 = val
+    
+    def _binary_command(self, id):
+        self._unary_command(id)
+        tok, val = self.lex.next_token()
+        self._arg2 = int(val)

@@ -1,26 +1,56 @@
-from Parser import Parser
-from CodeWriter import CodeWriter
+import sys, os, os.path, glob
+import Parser, CodeWriter
+from VMConstant import *
 
-def translate_vm_file(vm_file_path):
-    # output file name
-    asm_file_name = vm_file_path[:-3] + ".asm"
-    
-    # Initialize Parser and CodeWriter
-    parser = Parser(vm_file_path)
-    code_writer = CodeWriter(asm_file_name)
-    
-    # Loop through each command in the input file
-    while parser.hasMoreCommands():
-        parser.advance()
-        command_type = parser.commandType()
+class VMTranslator(object):
+    def __init__(self):
+        pass
         
-        # Write the command to assembly code
-        if command_type == "C_ARITHMETIC":
-            code_writer.writeArithmetic(parser.arg1())
-        elif command_type in ["C_PUSH", "C_POP"]:
-            code_writer.writePushPop(command_type, parser.arg1(), parser.arg2())
+    def translate_all(self, infiles, outfile):
+        if infiles != []:
+            code_writer = CodeWriter.CodeWriter(outfile)
+            for infile in infiles:
+                self._translate(infile, code_writer)
+            code_writer.Close()
+        
+    def _translate(self, infile, code_writer):
+        parser = Parser.Parser(infile)
+        code_writer.set_file_name(os.path.basename(infile))
+        while parser.hasMoreCommands():
+            parser.advance()
+            self._gen_code(parser, code_writer)
+            
+    def _gen_code(self, parser, code_writer):
+        cmd = parser.commandType()
+        if cmd == C_ARITHMETIC:
+            code_writer.write_arithmetic(parser.arg1())
+        elif cmd == C_PUSH or cmd == C_POP:
+            code_writer.write_push_pop(cmd, parser.arg1(), parser.arg2())
+        elif cmd == C_LABEL:
+            code_writer.write_label(parser.arg1())
+        elif cmd == C_GOTO:
+            code_writer.write_goto(parser.arg1())
+        elif cmd == C_IF:
+            code_writer.write_if(parser.arg1())
+        elif cmd == C_FUNCTION:
+            code_writer.write_function(parser.arg1(), parser.arg2())
+        elif cmd == C_RETURN:
+            code_writer.write_return()
+        elif cmd == C_CALL:
+            code_writer.write_call(parser.arg1(), parser.arg2())
+    
+def main():
+    if len(sys.argv) != 2:
+        print( "Usage: VMtranslator [file.vm|dir]" )
+    else:
+        infiles, outfile = get_files( sys.argv[1] )
+        trans = VMTranslator()
+        trans.translate_all(infiles, outfile)
 
-    # Close the output file
-    code_writer.close()
+def get_files( file_or_dir ):
+    if file_or_dir.endswith('.vm'):
+        return [file_or_dir], file_or_dir.replace('.vm', '.asm')
+    else:
+        return glob.glob(file_or_dir+'/*.vm'), file_or_dir+'/'+file_or_dir+'.asm'
 
-translate_vm_file("BasicTest.vm")
+main()

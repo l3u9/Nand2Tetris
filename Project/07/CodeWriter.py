@@ -11,11 +11,6 @@ class CodeWriter:
     def set_file_name(self, filename):
         self._vm_file, ext = os.path.splitext(filename)
 
-    def write_init(self):
-        self._a_command('256')
-        self._c_command('D', 'A')
-        self._comp_to_reg(R_SP, 'D')
-        self.write_call('Sys.init', 0)
 
     def set_current_function_name(self, function_name: str) -> None:
         self.current_function_name = function_name
@@ -33,7 +28,7 @@ class CodeWriter:
 
 
     def write_push_pop(self, command_type: str, segment: str, index: int):
-        if command_type == self.C_PUSH:
+        if command_type == C_PUSH:
             self._push(segment, index)
         elif command_type == C_POP:
             self._pop(segment, index)
@@ -128,7 +123,7 @@ class CodeWriter:
     def _is_constant_seg(self, segment: str):
         return segment == S_CONST
 
-    def close(self) -> None:
+    def Close(self) -> None:
         self.output_file.close()
 
     def _binary(self, comp:str) -> str:
@@ -154,7 +149,7 @@ class CodeWriter:
         self._stack_to_dest("D")
         self._dec_sp()
         self._stack_to_dest("A")
-        self.Instruction_c("D", "D-A")
+        self.Instruction_c("D", "A-D")
         label_eq = self._jump("D", jump)
         self._comp_to_stack('0')
         label_ne = self._jump('0', 'JMP')
@@ -281,7 +276,7 @@ class CodeWriter:
         return asm_label[segment]
 
     def _asm_reg(self, regnum: int):
-        return "R " + str(regnum)
+        return "R" + str(regnum)
 
     def _jump(self, comp: str, jump: str):
         label = self._new_label()
@@ -291,17 +286,17 @@ class CodeWriter:
     
     def _new_label(self):
         self.label_num += 1
-        return 'LABEL ' + str(self.label_num)
+        return 'LABEL' + str(self.label_num)
 
     def Instruction_a(self, address: str):
         self.output_file.write("@" + address + "\n")
     
-    def Instruction_c(self, dest: str, comp: str, jump :str == None):
-        if dest != '':
+    def Instruction_c(self, dest: str, comp: str, jump :str = ''):
+        if dest != None:
             self.output_file.write(dest + "=")
         self.output_file.write(comp)
 
-        if jump != '':
+        if jump != None:
             self.output_file.write(';' + jump)
         self.output_file.write("\n")
 
